@@ -9,6 +9,7 @@ For this exercise group the customers into week long (7 days) cohorts and then c
 You may write your solution in the language of your choice, but we do have a preference towards Python (preferably using 3.6 or 3.7 with type hints). We suggest approaching this more like a work assignment than a personal project so please provide a README with clear instructions on how to setup any dependencies and execute your program. We also expect production quality testable code ideally with tests included as part of the project and ideally a build and execute script or maybe a dockerized version of the app with instructions on how to build and run. The program should output an HTML table or CSV in a format similar to:
  
 | Cohort      | Customers     | 0-6 days          | 7-13 days         | 14-20 days       | ....       |
+|-------------|---------------|-------------------|-------------------|------------------|------------|
 | 7/1-7/7     | 300 customers | 25% orderers (75) |                   |                  |            |
 |             |               | 25% 1st time (75) |                   |                  |            |
 | 6/24-6/30   | 200 customers | 15% orderers (30) | 5% orderers (10)  |                  |            |
