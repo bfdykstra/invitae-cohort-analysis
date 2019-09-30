@@ -1,0 +1,26 @@
+{
+  "name": "cohort-analysis-assignment",
+  "version": "1.0.0",
+  "description": "We would like to perform a cohort analysis on our customers to help identify changes in ordering behavior based on their signup date.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bfdykstra/invitae-cohort-analysis.git"
+  },
+  "author": "Ben Dykstra",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bfdykstra/invitae-cohort-analysis/issues"
+  },
+  "homepage": "https://github.com/bfdykstra/invitae-cohort-analysis#readme",
+  "dependencies": {
+    "eslint": "^6.5.0",
+    "pg": "^7.12.1",
+    "pg-hstore": "^2.3.3",
+    "sequelize": "^5.19.1",
+    "sequelize-cli": "^5.5.1"
+  }
+}
