@@ -1,26 +1,27 @@
 {
   "name": "cohort-analysis-assignment",
-  "version": "1.0.0",
-  "description": "We would like to perform a cohort analysis on our customers to help identify changes in ordering behavior based on their signup date.",
-  "main": "index.js",
+  "version": "0.0.0",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node ./bin/www",
+    "dev": "nodemon ./bin/www"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/bfdykstra/invitae-cohort-analysis.git"
-  },
-  "author": "Ben Dykstra",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/bfdykstra/invitae-cohort-analysis/issues"
-  },
-  "homepage": "https://github.com/bfdykstra/invitae-cohort-analysis#readme",
   "dependencies": {
-    "eslint": "^6.5.0",
+    "cookie-parser": "~1.4.4",
+    "csv-parse": "^4.4.7",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "http-errors": "~1.6.3",
+    "morgan": "~1.9.1",
+    "nodemon": "^1.19.3",
     "pg": "^7.12.1",
     "pg-hstore": "^2.3.3",
     "sequelize": "^5.19.1",
     "sequelize-cli": "^5.5.1"
+  },
+  "devDependencies": {
+    "eslint": "^6.5.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.18.2"
   }
 }
