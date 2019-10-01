@@ -21,7 +21,7 @@ const groupBy = (key) => (array) => array.reduce((objectsByKeyValue, obj) => {
  * Group the customers in to their respective cohorts from when they joined
  * @param {Array<Object>} customers array of customer records from db
  */
-const getCustomerCohorts = (customers) => {
+const splitCohorts = (customers) => {
   const customersArr = customers.map((customer) => ({
     joinedWeek: moment(customer.created).format('YYYY_ww'),
     orders: customer.orders.map((order) => order.dataValues),
@@ -34,13 +34,90 @@ const getCustomerCohorts = (customers) => {
  * Count the number of customers in each cohort
  * @param {Object} customerCohorts Object that has arrays of customers by the week that they joined
  * @returns {Object} Object with week keys, and the property n_customers that denotes how many
- * customers joined that week
+ * customers joined that week, and all the orders made by those customers
  */
 const countNumCustomersByCohort = (customerCohorts) => Object.keys(customerCohorts)
   .reduce((accum, cohortWeek) => {
   // eslint-disable-next-line no-param-reassign
-    accum[cohortWeek] = { n_customers: customerCohorts[cohortWeek].length };
+    accum[cohortWeek] = {
+      n_customers: customerCohorts[cohortWeek].length,
+      customers: customerCohorts[cohortWeek],
+    };
     return accum;
+  }, {});
+
+/**
+ *
+ * @param {String} orderDate Date String formatted like YYYY-MM-DD, time optionally added on
+ * @param {String} cohortWeek Date week string formatted like YYYY_ww where ww is the week number
+ */
+const getTimeDiff = (orderDate, cohortWeek) => {
+  const cohortStart = moment(cohortWeek, 'YYYY_ww').date('YYYY-MM-DD');
+
+  const dayDiff = moment(orderDate).diff(cohortStart, 'days');
+
+  if (dayDiff < 0) throw Error('A customer should not be able to order before they have joined');
+
+  let dayDiffString;
+  if (dayDiff <= 6) {
+    dayDiffString = '0 - 6 days';
+  } else if (dayDiff > 6 && dayDiff <= 13) {
+    dayDiffString = '7 - 13 days';
+  } else if (dayDiff > 13 && dayDiff <= 20) {
+    dayDiffString = '14 - 20 days';
+  } else if (dayDiff > 20 && dayDiff <= 27) {
+    dayDiffString = '21 - 27 days';
+  } else if (dayDiff > 27 && dayDiff <= 34) {
+    dayDiffString = '28 - 34 days';
+  } else if (dayDiff > 34 && dayDiff <= 41) {
+    dayDiffString = '35 - 41 days';
+  } else {
+    dayDiffString = '42+ days';
+  }
+
+  return dayDiffString;
+};
+
+/**
+ *
+ * @param {Object} customerCohorts Object that has arrays of customers by the week that they joined
+ * @returns {Object} Return object with new property orders, that has the time difference from
+ * the start of the cohort as keys, and the orders that were made in that time difference as values
+ * {
+ *  '2015_28': {
+ *    orders: {
+ *      '0 - 6 days': [...orders...],
+ *      '7 - 13 days': [....orders...],
+ *       ....
+ *       },
+ *    customers: [...customers...],
+ *    n_customers: number of customers in cohort
+ *  }
+ * }
+ */
+const groupOrdersByTimeFromCustomerJoin = (customerCohorts) => Object.keys(customerCohorts)
+  .reduce((allCohorts, cohortWeek) => {
+    const { customers } = customerCohorts[cohortWeek];
+
+    // array of all orders made by customers in this cohortWeek
+    const ordersInCustCohort = customers.reduce((accum, customer) => {
+      accum.push(...customer.orders.map((order) => order.dataValues));
+      return accum;
+    }, []);
+
+    // group those orders by the day difference from the cohort week
+    const ordersWithTimeDiff = ordersInCustCohort.map((order) => ({
+      orderTimeDiff: getTimeDiff(order.created, cohortWeek),
+      ...order,
+    }));
+
+    // eslint-disable-next-line no-param-reassign
+    allCohorts[cohortWeek] = {
+      orders: groupBy('orderTimeDiff')(ordersWithTimeDiff),
+      ...customerCohorts[cohortWeek],
+
+    };
+    return allCohorts;
   }, {});
 
 /**
@@ -92,12 +169,13 @@ const markFirstOrders = async (customers) => {
   }
 };
 
-getCustomersWithOrders({ limit: 100 })
+getCustomersWithOrders({ limit: 50 })
   .then((customers) => {
-    const grouped = getCustomerCohorts(customers);
-    logger.debug('grouped up: ', grouped);
-    // const nCust = countNumCustomersByCohort(grouped);
+    const grouped = splitCohorts(customers);
+    // logger.debug('grouped up: ', grouped);
+    const nCust = countNumCustomersByCohort(grouped);
 
+    groupOrdersByTimeFromCustomerJoin(nCust);
     // logger.debug(nCust);
   })
   .catch((e) => logger.error(e));
@@ -105,6 +183,6 @@ getCustomersWithOrders({ limit: 100 })
 module.exports = {
   getCustomersWithOrders,
   markFirstOrders,
-  getCustomerCohorts,
+  splitCohorts,
   countNumCustomersByCohort,
 };
