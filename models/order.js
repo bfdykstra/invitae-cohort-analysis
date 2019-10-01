@@ -4,6 +4,7 @@ module.exports = (sequelize, DataTypes) => {
     order_number: DataTypes.INTEGER,
     user_id: DataTypes.INTEGER,
     created: DataTypes.DATE,
+    first_order: DataTypes.BOOLEAN,
   }, {
     timestamps: false,
     tableName: 'Orders',
