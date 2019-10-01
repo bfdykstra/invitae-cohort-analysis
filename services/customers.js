@@ -1,5 +1,47 @@
+const moment = require('moment');
 const db = require('../models');
 const logger = require('../logger');
+
+
+/**
+ * This function is from here: https://gist.github.com/JamieMason/0566f8412af9fe6a1d470aa1e089a752
+ * @param {String} key key in which to groupby
+ * @param {Array} array the array of objects that get grouped by the above key
+ * @returns {Object} Return an object in which the keys are the given keys, and the values are
+ * the objects in the given array that have that key value
+ */
+const groupBy = (key) => (array) => array.reduce((objectsByKeyValue, obj) => {
+  const value = obj[key];
+  // eslint-disable-next-line no-param-reassign
+  objectsByKeyValue[value] = (objectsByKeyValue[value] || []).concat(obj);
+  return objectsByKeyValue;
+}, {});
+
+/**
+ * Group the customers in to their respective cohorts from when they joined
+ * @param {Array<Object>} customers array of customer records from db
+ */
+const getCustomerCohorts = (customers) => {
+  const customersArr = customers.map((customer) => ({
+    joinedWeek: moment(customer.created).format('YYYY_ww'),
+    orders: customer.orders.map((order) => order.dataValues),
+    ...customer.dataValues,
+  })); // flatten out the customers array object, give each object a createdWeek property
+  return groupBy('joinedWeek')(customersArr);
+};
+
+/**
+ * Count the number of customers in each cohort
+ * @param {Object} customerCohorts Object that has arrays of customers by the week that they joined
+ * @returns {Object} Object with week keys, and the property n_customers that denotes how many
+ * customers joined that week
+ */
+const countNumCustomersByCohort = (customerCohorts) => Object.keys(customerCohorts)
+  .reduce((accum, cohortWeek) => {
+  // eslint-disable-next-line no-param-reassign
+    accum[cohortWeek] = { n_customers: customerCohorts[cohortWeek].length };
+    return accum;
+  }, {});
 
 /**
  * Get customers who have at least 1 order, this is an inner join between customers and orders
@@ -27,29 +69,6 @@ const getCustomersWithOrders = async (options) => {
 
 
 /**
- * Retrieve every order with its customer attribute, inner join
- * @param {Object} options options object to pass to sequelize query
- */
-const getOrdersWithCustomers = async (options) => {
-  try {
-    return db.order.findAll({
-      include: [{
-        model: db.customer,
-        required: true,
-      }],
-      ...options,
-    });
-  } catch (err) {
-    // log out error:
-    logger.error('there was an error retrieving orders with customers: ', err);
-    return ({
-      error: err,
-      message: 'there was an error retrieving orders with customers',
-    });
-  }
-};
-
-/**
  * TODO: make the structure of this error handling/ return graceful
  * From a given array of customers, get their array of orders, sort them by the created property,
  * and mark the first one as first_order = true in the orders table
@@ -63,7 +82,7 @@ const markFirstOrders = async (customers) => {
         orders.sort((a, b) => a.created - b.created);
 
         // sorted in descending order, so the first order made will be the first in the list
-        orders[0].update({ first_order: true });
+        if (!orders[0].first_order) orders[0].update({ first_order: true });
       }
     }
     return ({ success: true });
@@ -73,16 +92,19 @@ const markFirstOrders = async (customers) => {
   }
 };
 
-getOrdersWithCustomers({ limit: 10 })
-  .then(async (orders) => {
-    console.log('order length: ', orders.length);
-    console.log(orders);
-    // const res = await markFirstOrders(customers);
-    // console.log('response: ', res);
+getCustomersWithOrders({ limit: 100 })
+  .then((customers) => {
+    const grouped = getCustomerCohorts(customers);
+    logger.debug('grouped up: ', grouped);
+    // const nCust = countNumCustomersByCohort(grouped);
+
+    // logger.debug(nCust);
   })
-  .catch((e) => logger.error('error: ', e));
+  .catch((e) => logger.error(e));
+
 module.exports = {
   getCustomersWithOrders,
   markFirstOrders,
-
+  getCustomerCohorts,
+  countNumCustomersByCohort,
 };
