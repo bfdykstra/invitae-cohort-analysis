@@ -26,7 +26,7 @@ const groupBy = (key) => (array) => array.reduce((objectsByKeyValue, obj) => {
  * @param {Number} num the number of first time orderers
  * @param {Number} total The total number of customers in that cohort
  */
-const getFirstTimePercentString = (num, total) => `(${((num / total) * 100).toFixed(0)}% 1st time (${num})`;
+const getFirstTimePercentString = (num, total) => `${((num / total) * 100).toFixed(0)}% 1st time (${num})`;
 
 
 /**
@@ -34,9 +34,15 @@ const getFirstTimePercentString = (num, total) => `(${((num / total) * 100).toFi
  * @param {Number} num the number of distinct users
  * @param {Number} total The total number of customers in that cohort
  */
-const getOrdersPercentString = (num, total) => `(${((num / total) * 100).toFixed(0)}% orderers (${num})`;
+const getOrdersPercentString = (num, total) => `${((num / total) * 100).toFixed(0)}% orderers (${num})`;
 
-
+/**
+ * Format a given year and week string so that it returns a string of the start
+ * date of the week, and the end date of the week
+ * @param {String} cohortWeek Cohort week string, formatted like YYYY_ww
+ * @returns {String} Start of the week - End of the week, formatted like M/DD - M/DD
+ */
+const formatCohortDate = (cohortWeek) => `${moment(cohortWeek, 'YYYY_ww').startOf('week').format('M/DD')} - ${moment(cohortWeek, 'YYYY_ww').endOf('week').format('M/DD')}`;
 /**
  *
  * @param {String} orderDate Date String formatted like YYYY-MM-DD, time optionally added on
@@ -185,8 +191,8 @@ const getDistinctUserAndOrderCount = (cohortsWithOrderGroups) => Object.keys(coh
 
 
 /**
- * Get customers who have at least 1 order, this is an inner join between customers and orders
- * @param {Object} an options object to pass to the findAll query
+ * Get customers who have at least 1 order, inner join between customers and orders
+ * @param {Object} options object to pass to the findAll query
  * @returns { Array<Object>} Returns an array of only customers who have orders
  */
 const getCustomersWithOrders = async (options) => {
@@ -196,6 +202,7 @@ const getCustomersWithOrders = async (options) => {
         model: db.order,
         required: true,
       }],
+      order: [['created', 'DESC']],
       ...options,
     });
   } catch (err) {
@@ -214,18 +221,32 @@ const getCustomersWithOrders = async (options) => {
  * From a given array of customers, get their array of orders, sort them by the created property,
  * and mark the first one as first_order = true in the orders table
  * @param {Array<Object>} customers an array of customer objects from the db
+ * @returns {Object} Object with success property that is true when operation was successful,
+ * else false
  */
 const markFirstOrders = async (customers) => {
   try {
-    for (let i = 0; i < customers.length; i += 1) {
-      const { orders } = customers[i];
+    // for (let i = 0; i < customers.length; i += 1) {
+    //   const { orders } = customers[i];
+    //   if (orders.length) {
+    //     orders.sort((a, b) => a.created - b.created);
+
+    //     // sorted in descending order, so the first order made will be the first in the list
+    //     if (!orders[0].first_order) await orders[0].update({ first_order: true });
+    //     // logger.debug('orders: ', orders);
+    //   }
+    // }
+
+    await Promise.all(customers.map(({ orders }) => {
       if (orders.length) {
         orders.sort((a, b) => a.created - b.created);
 
         // sorted in descending order, so the first order made will be the first in the list
-        if (!orders[0].first_order) orders[0].update({ first_order: true });
+        if (!orders[0].first_order) return orders[0].update({ first_order: true });
+
+        // logger.debug('orders: ', orders);
       }
-    }
+    }));
     return ({ success: true });
   } catch (error) {
     logger.error(error);
@@ -234,8 +255,38 @@ const markFirstOrders = async (customers) => {
 };
 
 
-getCustomersWithOrders({ limit: 50 })
-  .then((customers) => {
+/**
+ *
+ * @param {Object} allCohorts Object that has arrays of customers by the week that they
+ * joined, and order object that has each cohorts orders grouped by the time difference from the
+ * start of the cohort
+ * @param {Array<String>} cohortWeekArr A sorted array of all of the cohort weeks
+ * @param {Array<String>} orderTimeDiffArr An array of all the time difference strings for orders
+ */
+const formatForCSV = (allCohorts, cohortWeekArr, orderTimeDiffArr) => cohortWeekArr.map(
+  (cohortWeek) => {
+    const rowOb = {
+      Cohort: formatCohortDate(cohortWeek),
+      Customers: allCohorts[cohortWeek] ? `${allCohorts[cohortWeek].nCustomers} Customers` : '',
+    };
+
+    // get each time diff in as a column
+    orderTimeDiffArr.forEach((timeDiff) => {
+      rowOb[timeDiff] = allCohorts[cohortWeek] && allCohorts[cohortWeek].orders[timeDiff]
+        ? `${allCohorts[cohortWeek].orders[timeDiff].distinctUserCount}, ${allCohorts[cohortWeek].orders[timeDiff].firstOrderCount}`
+        : '';
+    });
+
+    return rowOb;
+  },
+);
+
+
+getCustomersWithOrders()
+  .then(async (customers) => {
+    await markFirstOrders(customers);
+
+    // logger.debug(customers.map((cust) => cust.orders.map((order) => order.dataValues)));
     const grouped = splitCohorts(customers);
 
     const nCust = countNumCustomersByCohort(grouped);
@@ -244,7 +295,12 @@ getCustomersWithOrders({ limit: 50 })
 
     // get count of distinct user ids for each order group
     const distinctCounts = getDistinctUserAndOrderCount(cohortsWithOrderGroups);
-    logger.debug(JSON.stringify(distinctCounts));
+    // logger.debug(JSON.stringify(distinctCounts));
+
+    const rows = formatForCSV(distinctCounts, Object.keys(distinctCounts),
+      ['0 - 6 days', '7 - 13 days', '14 - 20 days', '21 - 27 days', '28 - 34 days', '35 - 41 days', '42+ days']);
+
+    logger.debug('rows: ', rows);
   })
   .catch((e) => logger.error(e));
 
