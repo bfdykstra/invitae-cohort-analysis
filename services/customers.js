@@ -4,11 +4,14 @@ const logger = require('../logger');
 
 
 /**
- * This function is from here: https://gist.github.com/JamieMason/0566f8412af9fe6a1d470aa1e089a752
+ * This function is from here: https://gist.github.com/JamieMason/0566f8412af9fe6a1d470aa1e089a752.
+ * Using this, because it's much easier than trying to use Sequelize with groups and aggregate
+ * functions
  * @param {String} key key in which to groupby
  * @param {Array} array the array of objects that get grouped by the above key
- * @returns {Object} Return an object in which the keys are the given keys, and the values are
- * the objects in the given array that have that key value
+ * @returns {Object} An object in which the keys are the distinct values of the
+ * given groupby key, and the values are the objects in the given array that
+ * have that key value
  */
 const groupBy = (key) => (array) => array.reduce((objectsByKeyValue, obj) => {
   const value = obj[key];
@@ -17,34 +20,22 @@ const groupBy = (key) => (array) => array.reduce((objectsByKeyValue, obj) => {
   return objectsByKeyValue;
 }, {});
 
-/**
- * Group the customers in to their respective cohorts from when they joined
- * @param {Array<Object>} customers array of customer records from db
- */
-const splitCohorts = (customers) => {
-  const customersArr = customers.map((customer) => ({
-    joinedWeek: moment(customer.created).format('YYYY_ww'),
-    orders: customer.orders.map((order) => order.dataValues),
-    ...customer.dataValues,
-  })); // flatten out the customers array object, give each object a createdWeek property
-  return groupBy('joinedWeek')(customersArr);
-};
 
 /**
- * Count the number of customers in each cohort
- * @param {Object} customerCohorts Object that has arrays of customers by the week that they joined
- * @returns {Object} Object with week keys, and the property n_customers that denotes how many
- * customers joined that week, and all the orders made by those customers
+ * Get the formatted string for the percentage and number of first time orderers.
+ * @param {Number} num the number of first time orderers
+ * @param {Number} total The total number of customers in that cohort
  */
-const countNumCustomersByCohort = (customerCohorts) => Object.keys(customerCohorts)
-  .reduce((accum, cohortWeek) => {
-  // eslint-disable-next-line no-param-reassign
-    accum[cohortWeek] = {
-      n_customers: customerCohorts[cohortWeek].length,
-      customers: customerCohorts[cohortWeek],
-    };
-    return accum;
-  }, {});
+const getFirstTimePercentString = (num, total) => `(${((num / total) * 100).toFixed(0)}% 1st time (${num})`;
+
+
+/**
+ * Get the formatted string for the percentage and number of orderers.
+ * @param {Number} num the number of distinct users
+ * @param {Number} total The total number of customers in that cohort
+ */
+const getOrdersPercentString = (num, total) => `(${((num / total) * 100).toFixed(0)}% orderers (${num})`;
+
 
 /**
  *
@@ -78,6 +69,38 @@ const getTimeDiff = (orderDate, cohortWeek) => {
   return dayDiffString;
 };
 
+
+/**
+ * Group the customers in to their respective cohorts from when they joined
+ * @param {Array<Object>} customers array of customer records from db
+ */
+const splitCohorts = (customers) => {
+  const customersArr = customers.map((customer) => ({
+    joinedWeek: moment(customer.created).format('YYYY_ww'),
+    orders: customer.orders.map((order) => order.dataValues),
+    ...customer.dataValues,
+  })); // flatten out the customers array object, give each object a createdWeek property
+  return groupBy('joinedWeek')(customersArr);
+};
+
+
+/**
+ * Count the number of customers in each cohort
+ * @param {Object} customerCohorts Object that has arrays of customers by the week that they joined
+ * @returns {Object} Object with week keys, and the property nCustomers that denotes how many
+ * customers joined that week, and all the orders made by those customers
+ */
+const countNumCustomersByCohort = (customerCohorts) => Object.keys(customerCohorts)
+  .reduce((accum, cohortWeek) => {
+  // eslint-disable-next-line no-param-reassign
+    accum[cohortWeek] = {
+      nCustomers: customerCohorts[cohortWeek].length,
+      customers: customerCohorts[cohortWeek],
+    };
+    return accum;
+  }, {});
+
+
 /**
  *
  * @param {Object} customerCohorts Object that has arrays of customers by the week that they joined
@@ -91,7 +114,7 @@ const getTimeDiff = (orderDate, cohortWeek) => {
  *       ....
  *       },
  *    customers: [...customers...],
- *    n_customers: number of customers in cohort
+ *    nCustomers: number of customers in cohort
  *  }
  * }
  */
@@ -113,12 +136,53 @@ const groupOrdersByTimeFromCustomerJoin = (customerCohorts) => Object.keys(custo
 
     // eslint-disable-next-line no-param-reassign
     allCohorts[cohortWeek] = {
-      orders: groupBy('orderTimeDiff')(ordersWithTimeDiff),
+      orders: groupBy('orderTimeDiff')(ordersWithTimeDiff), // group ordersWithTimeDiff array by the orderTimeDiff property
       ...customerCohorts[cohortWeek],
 
     };
     return allCohorts;
   }, {});
+
+
+/**
+ * Get the count of distinct users and new orders in each order time difference group.
+ * TODO: this function name is trash, and doing two things, maybe split up
+ * @param {Object} cohortsWithOrderGroups Object that has arrays of customers by the week that they
+ * joined, and order object that has each cohorts orders grouped by the time difference from the
+ * start of the cohort
+ * @returns {Object} object with new orders property that has the number of distinct users who
+ * orders in that time frame, as well as the number of first time orders
+ */
+const getDistinctUserAndOrderCount = (cohortsWithOrderGroups) => Object.keys(cohortsWithOrderGroups)
+  .reduce((customerCohorts, cohortWeek) => {
+    const { orders: ordersOb, nCustomers } = cohortsWithOrderGroups[cohortWeek];
+
+    const newOrders = Object.keys(ordersOb).reduce((newOrderOb, orderTimeDiff) => {
+      const allOrders = ordersOb[orderTimeDiff];
+      const userIds = allOrders.map((order) => order.user_id);
+      const distinctUserCount = new Set(userIds).size;
+      const firstOrderCount = allOrders.filter((order) => order.first_order).length;
+
+      // eslint-disable-next-line no-param-reassign
+      newOrderOb[orderTimeDiff] = {
+        orders: allOrders,
+        distinctUserCount: getOrdersPercentString(distinctUserCount, nCustomers),
+        firstOrderCount: getFirstTimePercentString(firstOrderCount, nCustomers),
+      };
+
+      return newOrderOb;
+    }, {});
+
+    // eslint-disable-next-line no-param-reassign
+    customerCohorts[cohortWeek] = {
+      orders: newOrders,
+      nCustomers: cohortsWithOrderGroups[cohortWeek].nCustomers,
+      customers: cohortsWithOrderGroups[cohortWeek].customers,
+    };
+
+    return customerCohorts;
+  }, {});
+
 
 /**
  * Get customers who have at least 1 order, this is an inner join between customers and orders
@@ -169,14 +233,18 @@ const markFirstOrders = async (customers) => {
   }
 };
 
+
 getCustomersWithOrders({ limit: 50 })
   .then((customers) => {
     const grouped = splitCohorts(customers);
-    // logger.debug('grouped up: ', grouped);
+
     const nCust = countNumCustomersByCohort(grouped);
 
-    groupOrdersByTimeFromCustomerJoin(nCust);
-    // logger.debug(nCust);
+    const cohortsWithOrderGroups = groupOrdersByTimeFromCustomerJoin(nCust);
+
+    // get count of distinct user ids for each order group
+    const distinctCounts = getDistinctUserAndOrderCount(cohortsWithOrderGroups);
+    logger.debug(JSON.stringify(distinctCounts));
   })
   .catch((e) => logger.error(e));
 
