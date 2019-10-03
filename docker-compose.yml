@@ -1,0 +1,21 @@
+version: '3.5'
+services:
+  app:
+    container_name: app
+    build: .
+    depends_on:
+      - database
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: postgres://benjamindykstra@database:5432/invitae
+      NODE_ENV: production
+    command: npm run start
+  database:
+    container_name: database
+    image: postgres:11.5
+    ports:
+      - "8888:5432"
+    environment:
+      POSTGRES_USER: benjamindykstra
+      POSTGRES_DB: invitae

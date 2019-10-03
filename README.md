@@ -1,3 +1,12 @@
+```
+docker-compose up -d
+docker exec app ./node_modules/.bin/sequelize db:migrate
+docker exec app ./node_modules/.bin/sequelize db:seed:all
+
+To get the file locally:
+docker cp app:/usr/src/app/data/cohort_report.csv <your file name>.csv
+```
+
 # The Challenge
  
 We would like to perform a cohort analysis on our customers to help identify changes in ordering behavior based on their signup date.

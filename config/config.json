@@ -7,5 +7,14 @@
     "dialect": "postgres",
     "logging": false,
     "operatorsAliases": false
+  },
+  "production": {
+    "username": "benjamindykstra",
+    "password": null,
+    "database": "invitae",
+    "host": "database",
+    "dialect": "postgres",
+    "logging": false,
+    "operatorsAliases": false
   }
 }
