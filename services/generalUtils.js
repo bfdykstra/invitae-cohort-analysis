@@ -7,8 +7,8 @@ const moment = require('moment');
  * @param {String} key key in which to groupby
  * @param {Array} array the array of objects that get grouped by the above key
  * @returns {Object} An object in which the keys are the distinct values of the
- * given groupby key, and the values are the objects in the given array that
- * have that key value
+ * given groupby key, and each corresponding value is an array of objects, in which each object
+ * has the corresponding key value
  */
 const groupBy = (key) => (array) => array.reduce((objectsByKeyValue, obj) => {
   const value = obj[key];
@@ -57,4 +57,5 @@ const formatForCSV = (allCohorts, cohortWeekArr, orderTimeDiffArr) => cohortWeek
 module.exports = {
   formatForCSV,
   groupBy,
+  formatCohortDate,
 };

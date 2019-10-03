@@ -1,6 +1,7 @@
 const express = require('express');
 const ObjectsToCsv = require('objects-to-csv');
 const createError = require('http-errors');
+const fs = require('fs');
 
 const { formatForCSV } = require('../services/generalUtils');
 
