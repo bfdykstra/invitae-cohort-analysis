@@ -44,6 +44,7 @@ describe('Functional tests for the generalUtils modules: ', () => {
   describe('FormatForCSV function: ', () => {
     const rows = formatForCSV(formatCSVInput, Object.keys(formatCSVInput),
       ['0 - 6 days', '7 - 13 days', '14 - 20 days', '21 - 27 days', '28 - 34 days', '35 - 41 days', '42+ days']);
+
     it('should return an array of objects', () => {
       assert.isArray(rows);
       assert.isTrue(rows[0] !== null && typeof rows[0] === 'object');

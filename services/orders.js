@@ -75,7 +75,7 @@ const groupOrdersByTimeFromCustomerJoin = (customerCohorts) => Object.keys(custo
 
     // array of all orders made by customers in this cohortWeek
     const ordersInCustCohort = customers.reduce((accum, customer) => {
-      accum.push(...customer.orders.map((order) => order.dataValues));
+      accum.push(...customer.orders.map((order) => order));
       return accum;
     }, []);
 
@@ -85,9 +85,10 @@ const groupOrdersByTimeFromCustomerJoin = (customerCohorts) => Object.keys(custo
       ...order,
     }));
 
+    // group ordersWithTimeDiff array by the orderTimeDiff property
     // eslint-disable-next-line no-param-reassign
     allCohorts[cohortWeek] = {
-      orders: groupBy('orderTimeDiff')(ordersWithTimeDiff), // group ordersWithTimeDiff array by the orderTimeDiff property
+      orders: groupBy('orderTimeDiff')(ordersWithTimeDiff),
       ...customerCohorts[cohortWeek],
 
     };

@@ -12,8 +12,8 @@ const { groupBy } = require('./generalUtils');
 const splitCohorts = (customers) => {
   const customersArr = customers.map((customer) => ({
     joinedWeek: moment(customer.created).format('YYYY_ww'),
-    orders: customer.orders.map((order) => order.dataValues),
-    ...customer.dataValues,
+    orders: customer.orders.map((order) => order),
+    ...customer,
   })); // flatten out the customers array object, give each object a createdWeek property
   return groupBy('joinedWeek')(customersArr);
 };
@@ -43,7 +43,7 @@ const countCustomersByCohort = (customerCohorts) => Object.keys(customerCohorts)
  */
 const getCustomersWithOrders = async (options) => {
   try {
-    return db.customer.findAll({
+    const allCusts = await db.customer.findAll({
       include: [{
         model: db.order,
         required: true,
@@ -51,6 +51,8 @@ const getCustomersWithOrders = async (options) => {
       order: [['created', 'DESC']],
       ...options,
     });
+
+    return allCusts.map((cust) => cust.get({ plain: true }));
   } catch (err) {
     // log out error:
     logger.error('there was an error retrieving customers with orders: ', err);

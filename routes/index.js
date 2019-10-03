@@ -1,7 +1,6 @@
 const express = require('express');
 const ObjectsToCsv = require('objects-to-csv');
 const createError = require('http-errors');
-const fs = require('fs');
 
 const { formatForCSV } = require('../services/generalUtils');
 
@@ -29,7 +28,7 @@ router.get('/', (req, res) => {
 router.get('/cohort-report', async (req, res) => {
   try {
     const customers = await getCustomersWithOrders();
-
+    console.log('customers: ', customers);
     // mark the customers first orders
     await markFirstOrders(customers);
 
