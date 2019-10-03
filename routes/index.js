@@ -1,7 +1,7 @@
 const express = require('express');
 const ObjectsToCsv = require('objects-to-csv');
 const createError = require('http-errors');
-
+const logger = require('../logger');
 const { formatForCSV } = require('../services/generalUtils');
 
 const {
@@ -28,7 +28,9 @@ router.get('/', (req, res) => {
 router.get('/cohort-report', async (req, res) => {
   try {
     const customers = await getCustomersWithOrders();
-    console.log('customers: ', customers);
+
+    if (customers.error) throw customers;
+
     // mark the customers first orders
     await markFirstOrders(customers);
 
@@ -60,8 +62,8 @@ router.get('/cohort-report', async (req, res) => {
       data: rows,
     });
   } catch (error) {
+    logger.error('error creating cohort report: ', error);
     res.send(createError(500, `Something went wrong creating the cohort report: ${error.message}`));
-    // res.status(500).json
   }
 });
 

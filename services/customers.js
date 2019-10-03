@@ -55,10 +55,10 @@ const getCustomersWithOrders = async (options) => {
     return allCusts.map((cust) => cust.get({ plain: true }));
   } catch (err) {
     // log out error:
-    logger.error('there was an error retrieving customers with orders: ', err);
+    logger.error('There was an error retrieving customers with orders: ', err);
     return ({
       error: err,
-      message: 'there was an error retrieving customers with orders',
+      message: `There was an error retrieving customers with orders: ${err.message}`,
     });
   }
 };
