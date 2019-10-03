@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 const colors = require('colors');
 
 module.exports = {
