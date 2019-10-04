@@ -65,12 +65,12 @@ npm run dev
 ```
 
 ## Using the application
-The API is exposed at at localhost:3000. As of right now, there are only two routes defined, one at localhost:3000/ and localhost:3000/cohort-report. The home (/) route only returns some text that says you're at the home page. The /cohort-report endpoint creates a cohort report csv at data/cohort_report.csv. It returns a json object with a message and data field. The message field indicates where the output is, and the data field is the csv data in an array of objects that could be consumed by a front end client (say a client using (react-table)[https://www.npmjs.com/package/react-table]).
+The API is exposed at at localhost:3000. As of right now, there are only two routes defined, one at localhost:3000/ and localhost:3000/cohort-report. The home (/) route only returns some text that says you're at the home page. The /cohort-report endpoint creates a cohort report csv at data/cohort_report.csv. It returns a json object with a message and data field. The message field indicates where the output is, and the data field is the csv data in an array of objects that could be consumed by a front end client (say a client using [react-table](https://www.npmjs.com/package/react-table).
 
 ### Running tests
 From the project root execute: `npm run test`. 
 
-This project uses mocha and chai to run functional tests, with instabul code coverage reporting.
+This project uses mocha and chai to run functional tests, with instanbul code coverage reporting.
 
 ## Future work
 - [ ] Write tests that mock database interactions
