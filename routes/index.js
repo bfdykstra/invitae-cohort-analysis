@@ -21,10 +21,15 @@ const router = express.Router();
 
 /* GET home page. */
 router.get('/', (req, res) => {
-  res.send('hey this is the homepage');
+  res.send('Hey this is the homepage :)');
 });
 
-/* GET cohort reports */
+
+/**
+ * GET cohort reports
+ * @returns {Object} Responds with JSON object with the fields message and data. The data field has
+ * the JSON representation of the cohort report
+ */
 router.get('/cohort-report', async (req, res) => {
   try {
     const customers = await getCustomersWithOrders();
@@ -32,10 +37,10 @@ router.get('/cohort-report', async (req, res) => {
     if (customers.error) throw customers;
 
     // mark the customers first orders
-    await markFirstOrders(customers);
+    const markedOrders = await markFirstOrders(customers);
 
     // split up the customers in to their cohorts
-    const customersByCohort = splitCohorts(customers);
+    const customersByCohort = splitCohorts(markedOrders);
 
     // Get the count of the customers in each cohort
     const cohortsWithCustCounts = countCustomersByCohort(customersByCohort);
@@ -62,7 +67,7 @@ router.get('/cohort-report', async (req, res) => {
       data: rows,
     });
   } catch (error) {
-    logger.error('error creating cohort report: ', error);
+    logger.error('error creating cohort report: ', error.message || error);
     res.send(createError(500, `Something went wrong creating the cohort report: ${error.message}`));
   }
 });

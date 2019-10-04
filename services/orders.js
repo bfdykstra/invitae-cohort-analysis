@@ -154,7 +154,7 @@ const markFirstOrders = async (customers) => {
       }
       return ({});
     }));
-    return ({ success: true });
+    return customers.map((customer) => customer.get({ plain: true }));
   } catch (error) {
     logger.error(error);
     return ({ success: false });

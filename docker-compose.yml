@@ -15,7 +15,7 @@ services:
     container_name: database
     image: postgres:11.5
     ports:
-      - "8888:5432"
+      - "8000:5432"
     environment:
       POSTGRES_USER: benjamindykstra
       POSTGRES_DB: invitae
