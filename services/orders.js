@@ -146,22 +146,17 @@ const getDistinctUserAndOrderCount = (cohortsWithOrderGroups) => Object.keys(coh
  * else false
  */
 const markFirstOrders = async (customers) => {
-  try {
-    await Promise.all(customers.map(({ orders }) => {
-      if (orders.length) {
-        orders.sort((a, b) => a.created - b.created);
+  await Promise.all(customers.map(({ orders }) => {
+    if (orders.length) {
+      orders.sort((a, b) => a.created - b.created);
 
-        // sorted in descending order, so the first order made will be the first in the list
-        if (!orders[0].first_order) return orders[0].update({ first_order: true });
-        return ({});
-      }
+      // sorted in descending order, so the first order made will be the first in the list
+      if (!orders[0].first_order) return orders[0].update({ first_order: true });
       return ({});
-    }));
-    return customers.map((customer) => customer.get({ plain: true }));
-  } catch (error) {
-    logger.error(error);
-    return ({ success: false });
-  }
+    }
+    return ({});
+  }));
+  return customers.map((customer) => customer.get({ plain: true }));
 };
 
 module.exports = {
