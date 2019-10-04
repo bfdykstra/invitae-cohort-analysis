@@ -37,7 +37,8 @@ const countCustomersByCohort = (customerCohorts) => Object.keys(customerCohorts)
 
 
 /**
- * Get customers who have at least 1 order, inner join between customers and orders
+ * Get customers who have at least 1 order, inner join between customers and orders,
+ * order by created DESC
  * @param {Object} options object to pass to the findAll query
  * @returns { Array<Object>} Returns an array of only customers who have orders
  */
@@ -54,7 +55,6 @@ const getCustomersWithOrders = async (options) => {
 
     return allCusts;
   } catch (err) {
-    // log out error:
     logger.error('There was an error retrieving customers with orders: ', err);
     return ({
       error: err,

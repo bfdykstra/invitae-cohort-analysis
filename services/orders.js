@@ -7,6 +7,7 @@ const { groupBy } = require('./generalUtils');
  * Get the formatted string for the percentage and number of orderers.
  * @param {Number} num the number of distinct users
  * @param {Number} total The total number of customers in that cohort
+ * @returns {String} Returns a string "x% orders (total orders)"
  */
 const getOrdersPercentString = (num, total) => `${((num / total) * 100).toFixed(0)}% orderers (${num})`;
 
@@ -15,6 +16,7 @@ const getOrdersPercentString = (num, total) => `${((num / total) * 100).toFixed(
  * Get the formatted string for the percentage and number of first time orderers.
  * @param {Number} num the number of first time orderers
  * @param {Number} total The total number of customers in that cohort
+ * * @returns {String} Returns a string "x% 1st time (first orders)"
  */
 const getFirstTimePercentString = (num, total) => `${((num / total) * 100).toFixed(0)}% 1st time (${num})`;
 
@@ -23,6 +25,7 @@ const getFirstTimePercentString = (num, total) => `${((num / total) * 100).toFix
  * Get the time difference between when an order was placed, and the start of the cohort
  * @param {String} orderDate Date String formatted like YYYY-MM-DD, time optionally added on
  * @param {String} cohortWeek Date week string formatted like YYYY_ww where ww is the week number
+ * @returns {String} String with time difference range: "beg - end days" ex: "14 - 20 days"
  */
 const getTimeDiff = (orderDate, cohortWeek) => {
   const cohortStart = moment(cohortWeek, 'YYYY_ww').date('YYYY-MM-DD');

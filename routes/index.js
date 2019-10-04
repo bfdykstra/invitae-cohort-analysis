@@ -36,10 +36,10 @@ router.get('/cohort-report', async (req, res) => {
 
     if (customers.error) throw customers;
 
-    // mark the customers first orders
+    // Mark the customers first orders
     const markedOrders = await markFirstOrders(customers);
 
-    // split up the customers in to their cohorts
+    // Split up the customers in to their cohorts
     const customersByCohort = splitCohorts(markedOrders);
 
     // Get the count of the customers in each cohort
@@ -48,10 +48,10 @@ router.get('/cohort-report', async (req, res) => {
     // Group each cohorts orders up by the time from when they joined and when the order was placed
     const cohortsWithOrderGroups = groupOrdersByTimeFromCustomerJoin(cohortsWithCustCounts);
 
-    // get count of distinct users and first time orders for each order group
+    // Get count of distinct users and first time orders for each order group
     const customersWithDistinctCounts = getDistinctUserAndOrderCount(cohortsWithOrderGroups);
 
-    // prepare the object to be output to a csv
+    // Prepare the object to be output to a csv
     const timeDiffArr = ['0 - 6 days', '7 - 13 days', '14 - 20 days', '21 - 27 days', '28 - 34 days', '35 - 41 days', '42+ days'];
     const allCohortsArr = Object.keys(customersWithDistinctCounts);
 
