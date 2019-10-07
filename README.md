@@ -1,9 +1,9 @@
 # Invitae Cohort Analysis
 
 This project groups customers into cohorts based on when they joined, and then analyzes their subsequent purchasing behavior.
-This project is very simple to use, all you need to do is start it, and then in a browser, navigate to localhost:3000/cohort-report to generate your report.
+This project is very simple to use - all you need to do is start it and then in a browser navigate to localhost:3000/cohort-report to generate your report.
 
-The API is built in node.js and PostgreSQL, using express and the sequelize ORM to interact with the database. This API uses a simple relational model where each customer has 0 or many orders.
+The API is built with Node.js and PostgreSQL, using express and the sequelize ORM to interact with the database. This API uses a simple relational model where each customer has 0 or many orders.
 
 Initially, I tried to solve this challenge using in Python using Pandas and Numpy, but I then pivoted towards a relational model where the customers and orders are stored in a database. This has the advantage of much more testable, refactorable and reusable code. You can view my preliminary work in a python jupyter notebook [here](https://github.com/bfdykstra/invitae-cohort-analysis/blob/master/Invitae.ipynb).
 
